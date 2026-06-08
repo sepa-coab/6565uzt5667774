@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axarquía Immobilien-Infografik | Basierend in Sayalonga</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Playfair+Display:wght@700&amp;display=swap');
+        
+        :root {
+            --primary: #0f766e;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .heading-serif {
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+
+        .mediterranean-gradient {
+            background: linear-gradient(135deg, #0f766e 0%, #134e4b 100%);
+        }
+
+        .glass {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .agency-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .agency-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .map-container {
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .region-badge {
+            font-size: 0.65rem;
+            padding: 1px 8px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .inland { background-color: #fef3c7; color: #92400e; }
+        .coast-east { background-color: #dbeafe; color: #1e40af; }
+        .coast-central { background-color: #d1fae5; color: #065f46; }
+
+        .section-header {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-header:after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 60%;
+            height: 3px;
+            background: linear-gradient(to right, #0f766e, transparent);
+            border-radius: 3px;
+        }
+
+        .marker-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .data-table {
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="px-8 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <div class="w-11 h-11 bg-teal-800 rounded-2xl flex items-center justify-center">
+                        <span class="text-white text-3xl font-bold tracking-tighter">A</span>
+                    </div>
+                    <div>
+                        <span class="font-semibold text-2xl tracking-tight">AXARQUÍA</span>
+                        <span class="text-teal-700 font-medium">Real Estate</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-x-2 text-sm">
+                    <div class="flex items-center gap-x-2 px-4 py-1.5 bg-emerald-100 text-emerald-800 rounded-3xl text-xs font-medium">
+                        <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <span>Basierend in <strong>Sayalonga</strong></span>
+                    </div>
+                    <div class="text-xs text-slate-500 px-3 py-1">Stand: Juni 2026 • Deep Research</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="max-w-screen-2xl mx-auto px-8 pt-10 pb-8">
+        <div class="max-w-4xl">
+            <div class="inline-flex items-center gap-x-2 px-4 py-1 bg-white border border-slate-200 shadow-sm rounded-3xl mb-4">
+                <span class="text-emerald-600">📍</span>
+                <span class="text-sm font-medium text-slate-700">Interaktive Marktübersicht Axarquía</span>
+            </div>
+            
+            <h1 class="text-6xl font-semibold tracking-tighter heading-serif text-slate-900 leading-none">
+                Immobilien-Agenturen<br>
+                <span class="bg-gradient-to-r from-teal-700 to-teal-900 bg-clip-text text-transparent">in der Axarquía</span>
+            </h1>
+            
+            <p class="mt-4 text-xl text-slate-600 max-w-lg">
+                Interaktive Karte &amp; detaillierte Übersicht der wichtigsten Wettbewerber. 
+                Fokus auf Sayalonga, Cómpeta, Nerja, Torrox, Torre del Mar und Umgebung.
+            </p>
+            
+            <div class="flex items-center gap-x-4 mt-6">
+                <button onclick="document.getElementById('map-section').scrollIntoView({ behavior: 'smooth' })" 
+                        class="px-8 py-3.5 bg-teal-800 hover:bg-teal-900 transition-colors text-white font-semibold rounded-3xl flex items-center gap-x-2 text-sm shadow-lg shadow-teal-900/30">
+                    <span>Zur interaktiven Karte</span>
+                    <span class="text-lg">→</span>
+                </button>
+                
+                <button onclick="downloadHTML()" 
+                        class="px-6 py-3.5 border border-slate-300 hover:bg-white transition-colors text-sm font-medium rounded-3xl flex items-center gap-x-2">
+                    <span>Als HTML herunterladen</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="max-w-screen-2xl mx-auto px-8 pb-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white border border-slate-200 rounded-3xl p-5">
+                <div class="text-sm text-slate-500">Agenturen</div>
+                <div class="text-4xl font-semibold text-teal-800 mt-1">28+</div>
+                <div class="text-xs text-emerald-600 mt-1">In der Axarquía aktiv</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-3xl p-5">
+                <div class="text-sm text-slate-500">Regionen</div>
+                <div class="text-4xl font-semibold text-teal-800 mt-1">7</div>
+                <div class="text-xs text-emerald-600 mt-1">Sayalonga • Cómpeta • Nerja • Torrox • Torre del Mar • Vélez-Málaga • Algarrobo</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-3xl p-5">
+                <div class="text-sm text-slate-500">Fokus</div>
+                <div class="text-4xl font-semibold text-teal-800 mt-1">Expat + Local</div>
+                <div class="text-xs text-emerald-600 mt-1">Multilingual • Property Management • Full-Service</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-3xl p-5 flex items-center justify-center">
+                <div>
+                    <div class="text-xs text-center text-slate-500 mb-1">Powered by</div>
+                    <div class="flex items-center justify-center gap-x-1.5">
+                        <div class="px-3 py-1 bg-slate-900 text-white text-xs font-mono rounded-2xl">Deep Research</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Map Section -->
+    <div id="map-section" class="max-w-screen-2xl mx-auto px-8 pb-12">
+        <div class="flex items-end justify-between mb-5 px-1">
+            <div>
+                <h2 class="text-3xl font-semibold tracking-tight">Interaktive Karte der Agenturen</h2>
+                <p class="text-slate-600">Klicken Sie auf eine Karte oder einen Eintrag, um Details zu sehen. Zentriert auf Sayalonga.</p>
+            </div>
+            <div class="hidden md:flex items-center gap-x-2 text-xs">
+                <div class="flex items-center gap-x-1.5">
+                    <div class="w-3 h-3 rounded-full bg-amber-400"></div>
+                    <span class="text-slate-600">Inland</span>
+                </div>
+                <div class="flex items-center gap-x-1.5">
+                    <div class="w-3 h-3 rounded-full bg-blue-400"></div>
+                    <span class="text-slate-600">Küste Ost</span>
+                </div>
+                <div class="flex items-center gap-x-1.5">
+                    <div class="w-3 h-3 rounded-full bg-emerald-400"></div>
+                    <span class="text-slate-600">Küste Zentral</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div class="map-container bg-white border border-slate-200 shadow-xl rounded-3xl overflow-hidden" style="height: 520px;">
+            <div id="map" class="w-full h-full"></div>
+        </div>
+        
+        <div class="mt-3 text-xs text-center text-slate-500">
+            Karte: OpenStreetMap • Marker zeigen ungefähre Hauptstandorte. Klicken Sie auf Marker für Details.
+        </div>
+    </div>
+
+    <!-- Agency Directory -->
+    <div class="max-w-screen-2xl mx-auto px-8 pb-16">
+        <div class="flex items-center justify-between mb-6 px-1">
+            <div>
+                <h2 class="text-3xl font-semibold tracking-tight">Vollständige Agenturen-Übersicht</h2>
+                <p class="text-slate-600">28+ Top-Player mit Fokus auf die genannten Orte</p>
+            </div>
+            
+            <!-- Search -->
+            <div class="relative w-80">
+                <input type="text" id="search-input" placeholder="Agentur oder Ort suchen..." 
+                       class="w-full pl-11 pr-4 py-3 border border-slate-300 focus:border-teal-600 rounded-3xl text-sm placeholder:text-slate-400 focus:outline-none transition-all">
+                <div class="absolute left-4 top-3.5 text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 01-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards Grid -->
+        <div id="agency-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            <!-- Populated by JS -->
+        </div>
+        
+        <div class="mt-8 text-center">
+            <p class="text-xs text-slate-500">Daten aus umfangreicher Recherche (idealista, Websites, Verzeichnisse) • Stand Juni 2026 • Für Sayalonga-basiertes Deep Research</p>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initializeTailwind() {
+            document.documentElement.style.setProperty('--accent', '#0f766e');
+        }
+        
+        // Agency Data
+        const agencies = [
+            {
+                name: "Taurus Real Estate Spain SL",
+                ort: "Cómpeta + Caleta de Vélez (deckt Sayalonga, Axarquía-Pueblos ab)",
+                website: "https://taurusrealestate.com",
+                kurzinfo: "Seit 2004, familiengeführt, Full-Service für internationale Käufer ab Ankunft (Hotel, Auto, NIE, Bank, Hypothek), Fokus auf rural/pueblo Properties",
+                lat: 36.833,
+                lng: -3.983,
+                region: "inland"
+            },
+            {
+                name: "Expat Real Estate & Consulting",
+                ort: "Sayalonga (Plaza Don Rafael Alcoba 7) + Torre del Mar",
+                website: "https://expatrealestatemalaga.com",
+                kurzinfo: "Stark multilingual (inkl. Deutsch), dediziertes Property Management für Abwesende, breite Axarquía-Abdeckung",
+                lat: 36.782,
+                lng: -4.019,
+                region: "inland"
+            },
+            {
+                name: "Sayamar Real Estate | Consulting | Property Management",
+                ort: "Sayalonga (Calle el Calvario 5)",
+                website: "https://sayamar.com",
+                kurzinfo: ">24 Jahre Erfahrung, starker Fokus auf Property Management für Eigentümer im Ausland, Villen mit tourist. Lizenz & Solar",
+                lat: 36.782,
+                lng: -4.019,
+                region: "inland"
+            },
+            {
+                name: "Country Properties",
+                ort: "Cómpeta, Torrox, Torre del Mar – deckt Sayalonga, Algarrobo weit ab",
+                website: "https://countryproperties.net",
+                kurzinfo: "Seit 1986, umfassendster One-Stop-Service: Verkauf/Vermietung, Bau/Renovierung, Maintenance, AXA-Versicherung",
+                lat: 36.833,
+                lng: -3.983,
+                region: "inland"
+            },
+            {
+                name: "Sergio Fernández Properties",
+                ort: "Cómpeta (Zentrum, Sayalonga-Nähe)",
+                website: "https://sfproperties.es",
+                kurzinfo: "Lokaler aus Cómpeta (lebenslang), Interior-Design-Hintergrund, perfekt für Dorf-Objekte & Renovierungen",
+                lat: 36.833,
+                lng: -3.983,
+                region: "inland"
+            },
+            {
+                name: "Competa Properties / Inmocompeta",
+                ort: "Cómpeta",
+                website: "https://competaproperties.com",
+                kurzinfo: "Etabliert in Cómpeta, Verkauf + Langzeit- und Ferienvermietung, tiefes Ortswissen der Axarquía",
+                lat: 36.833,
+                lng: -3.983,
+                region: "inland"
+            },
+            {
+                name: "Real Estate Andalusia",
+                ort: "Cómpeta",
+                website: "https://realestateandalusia.es",
+                kurzinfo: "Boutique-Agentur, LGBTQ+-friendly, starker Competa-Fokus auf Villen, Fincas und Townhouses",
+                lat: 36.833,
+                lng: -3.983,
+                region: "inland"
+            },
+            {
+                name: "CasaReal Inmobiliaria",
+                ort: "Vélez-Málaga",
+                website: "https://casarealinmobiliaria.es",
+                kurzinfo: "Lokal in Vélez, breites Portfolio an Wohnungen und Häusern",
+                lat: 36.783,
+                lng: -4.102,
+                region: "coast-central"
+            },
+            {
+                name: "Checa Homes Grupo Inmobiliario",
+                ort: "Torre del Mar / Vélez-Málaga",
+                website: "https://checahomes.es",
+                kurzinfo: "Spezialisiert auf Torre del Mar & Vélez, Verkauf + Ferien-/Langzeitvermietung, Neubauten",
+                lat: 36.738,
+                lng: -4.095,
+                region: "coast-central"
+            },
+            {
+                name: "Pastor Inmobiliaria",
+                ort: "Torre del Mar",
+                website: "https://pastorinmobiliaria.com",
+                kurzinfo: "Lokal in Torre del Mar, Verkauf und Alquiler in Axarquía & Costa del Sol",
+                lat: 36.738,
+                lng: -4.095,
+                region: "coast-central"
+            },
+            {
+                name: "Inmobiliaria Moya",
+                ort: "Torre del Mar",
+                website: "https://inmoya.com",
+                kurzinfo: ">25 Jahre Erfahrung, Verkauf, Alquiler und Chancen in Torre del Mar, Vélez-Málaga & Axarquía",
+                lat: 36.738,
+                lng: -4.095,
+                region: "coast-central"
+            },
+            {
+                name: "Inmocalle Guerra",
+                ort: "Torre del Mar",
+                website: "https://inmocalleguerra.com",
+                kurzinfo: "Lokal in Torre del Mar, breites Angebot an Häusern & Wohnungen",
+                lat: 36.738,
+                lng: -4.095,
+                region: "coast-central"
+            },
+            {
+                name: "M5 Inmobiliaria",
+                ort: "Zwischen Torre del Mar & Vélez-Málaga",
+                website: "https://m5inmobiliaria.es",
+                kurzinfo: "Professionell geführt, Fokus auf hochwertige Lösungen in der Region",
+                lat: 36.76,
+                lng: -4.1,
+                region: "coast-central"
+            },
+            {
+                name: "Alba Inmobiliaria",
+                ort: "Vélez-Málaga",
+                website: "https://alba-inmobiliaria.com",
+                kurzinfo: "Spezialist für Vélez-Málaga, Verkauf von Häusern & Wohnungen",
+                lat: 36.783,
+                lng: -4.102,
+                region: "coast-central"
+            },
+            {
+                name: "Hi Nerja Real Estate",
+                ort: "Nerja",
+                website: "https://hinerja.com",
+                kurzinfo: "Multilingual (inkl. Deutsch), exklusive Verkaufsmethode, Verkauf + Ferien-/Langzeitmiete, auch Torrox",
+                lat: 36.746,
+                lng: -3.882,
+                region: "coast-east"
+            },
+            {
+                name: "Nerja Property Center (Juan Garrido)",
+                ort: "Nerja",
+                website: "https://nerjapropertycenter.com",
+                kurzinfo: "Familienbetrieb >40 Jahre, starke Ausrichtung auf ausländische Kunden (inkl. Deutschland), Post-Sale-Betreuung",
+                lat: 36.746,
+                lng: -3.882,
+                region: "coast-east"
+            },
+            {
+                name: "Villa Al-Andalus",
+                ort: "Nerja",
+                website: "https://villaal-andalus.com",
+                kurzinfo: "Verkauf & Vermietung in Nerja, Torrox, Frigiliana & Costa del Sol",
+                lat: 36.746,
+                lng: -3.882,
+                region: "coast-east"
+            },
+            {
+                name: "SM Inmobiliaria Nerja",
+                ort: "Nerja",
+                website: "https://smnerja.com",
+                kurzinfo: ">20 Jahre lokale Erfahrung, Full-Service in Nerja & Umgebung",
+                lat: 36.746,
+                lng: -3.882,
+                region: "coast-east"
+            },
+            {
+                name: "NerjaZul",
+                ort: "Nerja",
+                website: "https://nerjazul.com",
+                kurzinfo: "Verkauf, Ferienvermietung, Home Staging, touristische Vermietungsverwaltung",
+                lat: 36.746,
+                lng: -3.882,
+                region: "coast-east"
+            },
+            {
+                name: "Israel Huertas Inmobiliaria",
+                ort: "Torrox",
+                website: "https://israelhuertas.com",
+                kurzinfo: "Lokal in Torrox, Verkauf & Vermietung in Torrox & Nerja",
+                lat: 36.735,
+                lng: -3.952,
+                region: "coast-east"
+            },
+            {
+                name: "Inmobiliaria Mimi",
+                ort: "Torrox Costa",
+                website: "https://inmobiliariamimi.net",
+                kurzinfo: ">20 Jahre in Torrox Costa, Verkauf & Vermietung",
+                lat: 36.73,
+                lng: -3.96,
+                region: "coast-east"
+            },
+            {
+                name: "Inmobiliaria Don Pedro",
+                ort: "Torrox Costa",
+                website: "https://inmobiliariadonpedro.com",
+                kurzinfo: "Spezialisiert auf Torrox Costa, z. B. exklusive Áticos",
+                lat: 36.73,
+                lng: -3.96,
+                region: "coast-east"
+            },
+            {
+                name: "Torrox Homes",
+                ort: "Torrox",
+                website: "https://torroxhomes.es",
+                kurzinfo: "Fokus auf Torrox & Axarquía, Eigentümer & Käufer-Beratung",
+                lat: 36.735,
+                lng: -3.952,
+                region: "coast-east"
+            },
+            {
+                name: "Views Costa del Sol",
+                ort: "Algarrobo Costa & Umgebung",
+                website: "https://viewscostadelsol.com",
+                kurzinfo: "Erwähnt exklusive Objekte in Algarrobo Costa (z. B. 1. Linie Meer)",
+                lat: 36.76,
+                lng: -3.99,
+                region: "coast-east"
+            }
+        ];
+
+        // Initialize Map
+        let map;
+        let markers = {};
+
+        function initMap() {
+            // Center on Sayalonga
+            map = L.map('map', {
+                zoomControl: true,
+                attributionControl: false
+            }).setView([36.782, -4.019], 11);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                className: 'map-tiles'
+            }).addTo(map);
+
+            // Add markers
+            agencies.forEach(agency => {
+                const color = agency.region === 'inland' ? '#d97706' : 
+                             agency.region === 'coast-east' ? '#2563eb' : '#059669';
+                
+                const marker = L.marker([agency.lat, agency.lng], {
+                    icon: L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div style="background-color: ${color}; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>`,
+                        iconSize: [18, 18],
+                        iconAnchor: [9, 9]
+                    })
+                }).addTo(map);
+
+                const popupContent = `
+                    <div class="p-1">
+                        <div class="font-semibold text-base mb-1">${agency.name}</div>
+                        <div class="text-xs text-slate-500 mb-2">${agency.ort}</div>
+                        <a href="${agency.website}" target="_blank" class="inline-flex items-center text-teal-700 hover:text-teal-800 text-sm font-medium">
+                            Website besuchen →
+                        </a>
+                        <div class="mt-3 text-xs text-slate-600 leading-tight max-w-[260px]">
+                            ${agency.kurzinfo.substring(0, 160)}...
+                        </div>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent, {
+                    minWidth: 260,
+                    maxWidth: 280,
+                    className: 'custom-popup'
+                });
+
+                markers[agency.name] = marker;
+
+                // Click on marker highlights corresponding card
+                marker.on('click', () => {
+                    highlightCard(agency.name);
+                });
+            });
+
+            // Add a nice "You are here" marker for Sayalonga
+            const sayalongaMarker = L.marker([36.782, -4.019], {
+                icon: L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background: linear-gradient(#0f766e, #134e4b); width: 22px; height: 22px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 0 3px #0f766e; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold;">S</div>`,
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                })
+            }).addTo(map);
+            
+            sayalongaMarker.bindPopup("<b>Sie sind hier:</b><br>Sayalonga – Zentrum der Recherche");
+        }
+
+        function highlightCard(agencyName) {
+            // Remove previous highlights
+            document.querySelectorAll('.agency-card').forEach(card => {
+                card.classList.remove('!ring-2', '!ring-teal-600', '!ring-offset-2');
+            });
+
+            // Find and highlight the card
+            const cards = document.querySelectorAll('.agency-card');
+            cards.forEach(card => {
+                if (card.dataset.name === agencyName) {
+                    card.classList.add('!ring-2', '!ring-teal-600', '!ring-offset-2');
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Remove highlight after 3 seconds
+                    setTimeout(() => {
+                        card.classList.remove('!ring-2', '!ring-teal-600', '!ring-offset-2');
+                    }, 3000);
+                }
+            });
+        }
+
+        // Render Agency Cards
+        function renderAgencyCards(filteredAgencies = agencies) {
+            const grid = document.getElementById('agency-grid');
+            grid.innerHTML = '';
+
+            filteredAgencies.forEach(agency => {
+                const regionClass = agency.region === 'inland' ? 'inland' : 
+                                   agency.region === 'coast-east' ? 'coast-east' : 'coast-central';
+                
+                const cardHTML = `
+                    <div class="agency-card bg-white border border-slate-200 hover:border-teal-200 rounded-3xl p-5 flex flex-col h-full cursor-pointer" 
+                         data-name="${agency.name}"
+                         onclick="flyToAgency('${agency.name}')">
+                        
+                        <div class="flex items-start justify-between mb-3">
+                            <div>
+                                <div class="font-semibold text-lg leading-tight pr-2">${agency.name}</div>
+                                <div class="text-xs text-slate-500 mt-0.5">${agency.ort}</div>
+                            </div>
+                            
+                            <div class="region-badge ${regionClass} flex-shrink-0 mt-1">
+                                ${agency.region === 'inland' ? 'Inland' : 
+                                  agency.region === 'coast-east' ? 'Küste Ost' : 'Küste Zentral'}
+                            </div>
+                        </div>
+                        
+                        <div class="flex-1">
+                            <div class="text-xs text-slate-600 leading-snug line-clamp-3 mb-3">
+                                ${agency.kurzinfo}
+                            </div>
+                        </div>
+                        
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <a href="${agency.website}" target="_blank" 
+                               onclick="event.stopImmediatePropagation();"
+                               class="inline-flex items-center gap-x-1.5 text-teal-700 hover:text-teal-800 font-medium">
+                                <span>Website</span>
+                                <span class="text-base leading-none">↗</span>
+                            </a>
+                            
+                            <button onclick="event.stopImmediatePropagation(); flyToAgency('${agency.name}');" 
+                                    class="text-xs px-3 py-1 bg-slate-100 hover:bg-teal-50 text-teal-700 rounded-2xl font-medium transition-colors">
+                                Auf Karte zeigen
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                grid.innerHTML += cardHTML;
+            });
+        }
+
+        // Fly to agency on map + highlight card
+        function flyToAgency(agencyName) {
+            const agency = agencies.find(a => a.name === agencyName);
+            if (!agency || !map || !markers[agencyName]) return;
+
+            map.flyTo([agency.lat, agency.lng], 13, {
+                duration: 1.2,
+                easeLinearity: 0.25
+            });
+
+            // Open popup after fly
+            setTimeout(() => {
+                markers[agencyName].openPopup();
+            }, 1300);
+
+            // Highlight the card
+            highlightCard(agencyName);
+        }
+
+        // Search & Filter
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            
+            searchInput.addEventListener('input', () => {
+                const term = searchInput.value.toLowerCase().trim();
+                
+                const filtered = agencies.filter(agency => 
+                    agency.name.toLowerCase().includes(term) || 
+                    agency.ort.toLowerCase().includes(term) ||
+                    agency.kurzinfo.toLowerCase().includes(term)
+                );
+                
+                renderAgencyCards(filtered);
+            });
+        }
+
+        // Keyboard shortcut for search
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '/' && document.activeElement.tagName === 'BODY') {
+                    e.preventDefault();
+                    document.getElementById('search-input').focus();
+                }
+            });
+        }
+
+        // Download HTML function
+        function downloadHTML() {
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'axarquia_real_estate_infographic.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize everything
+        function initializeInfographic() {
+            initializeTailwind();
+            initMap();
+            renderAgencyCards();
+            setupSearch();
+            setupKeyboardShortcuts();
+            
+            // Bonus: Show welcome popup on map after load
+            setTimeout(() => {
+                const sayalongaMarker = Object.values(markers).find(m => 
+                    m.getLatLng().lat === 36.782 && m.getLatLng().lng === -4.019
+                );
+                if (sayalongaMarker) {
+                    // Optional: uncomment to auto-open Sayalonga popup
+                    // sayalongaMarker.openPopup();
+                }
+            }, 2200);
+            
+            // Easter egg: Press "S" to center on Sayalonga
+            document.addEventListener('keypress', function(e) {
+                if (e.key.toLowerCase() === 's' && document.activeElement.tagName === 'BODY') {
+                    map.flyTo([36.782, -4.019], 12, { duration: 0.8 });
+                }
+            });
+            
+            console.log('%c[AXARQUÍA Infografik] Interaktive HTML-Infografik erfolgreich initialisiert.', 'color:#64748b');
+        }
+
+        // Boot
+        window.onload = initializeInfographic;
+    </script>
+</body>
+</html>
